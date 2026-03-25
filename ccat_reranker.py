@@ -1,56 +1,25 @@
-from cat.mad_hatter.decorators import hook
-from .rankers import recent_ranker, litm, filter_ranker, sbert_ranker
+from cat import hook, RecallSettings
 from sentence_transformers import CrossEncoder
 
+from .rankers import litm, sbert_ranker
+
+
 @hook(priority=1)
-def after_cat_recalls_memories(cat) -> None:
-    """Hook after semantic search in memories.
+def after_cat_recalls_memories(config: RecallSettings, cat) -> None:
+    if not cat.working_memory.context_memories:
+        return
 
-    The hook is executed just after the Cat searches for the meaningful context in memories
-    and stores it in the *Working Memory*.
-
-    Parameters
-    ----------
-    cat : CheshireCat
-        Cheshire Cat instance.
-
-    """
-    
-    #TODO print(cat.working_memory.history[0]['message'])
     settings = cat.mad_hatter.get_plugin().load_settings()
-    if settings["RECENTNESS"]:
-        if cat.working_memory.episodic_memories:
-            recent_docs = recent_ranker(cat.working_memory.episodic_memories)
-            cat.working_memory.episodic_memories = recent_docs
-        else:
-            print("#HicSuntGattones")
-    
-    #TODO refactor
-    if settings["SBERT"]:
+
+    final_docs = None
+    if settings["sbert"]:
         model = CrossEncoder(settings["ranker"])
-        if cat.working_memory.declarative_memories:
-            sbert_docs = sbert_ranker(cat.working_memory.declarative_memories, cat.working_memory.history[0].text, model)
-            if settings["LITM"]:
-                litm_docs = litm(sbert_docs)
-                cat.working_memory.declarative_memories = litm_docs
-            else:
-                cat.working_memory.declarative_memories = sbert_docs
-        else:
-            print("#HicSuntGattones")
-    else:
-        if cat.working_memory.declarative_memories:
-            if settings["LITM"]:
-                litm_docs = litm(cat.working_memory.declarative_memories)
-                cat.working_memory.declarative_memories = litm_docs
-            else:
-                print("#HicSuntGattones")
-        else:
-            print("#HicSuntGattones")
-    
-    if settings["FILTER"]:
-        if cat.working_memory.procedural_memories:
-            filtered = filter_ranker(cat.working_memory.procedural_memories, settings["tool_threshold"])
-            cat.working_memory.procedural_memories = filtered
-        else:
-            print("#HicSuntGattones")
-    pass # do nothing
+        final_docs = sbert_ranker(
+            cat.working_memory.context_memories, cat.working_memory.history[0].content.text, model
+        )
+
+    if settings["litm"]:
+        final_docs = litm(final_docs or cat.working_memory.context_memories)
+
+    if final_docs:
+        cat.working_memory.context_memories = final_docs
