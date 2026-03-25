@@ -1,5 +1,0 @@
-{
-    "litm": false,
-    "sbert": false,
-    "ranker": "cross-encoder/ms-marco-MiniLM-L-6-v2"
-}
