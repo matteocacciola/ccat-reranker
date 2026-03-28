@@ -1,7 +1,11 @@
+from typing import List
 import numpy as np
+from sentence_transformers import CrossEncoder
+
+from cat.services.memory.models import DocumentRecall
 
 
-def litm(documents):
+def litm(documents: List[DocumentRecall]) -> List[DocumentRecall]:
     """
     Function based on Haystack's LITM ranker:
     https://github.com/deepset-ai/haystack/blob/main/haystack/nodes/ranker/lost_in_the_middle.py
@@ -27,8 +31,25 @@ def litm(documents):
     return litm_docs
 
 
-def sbert_ranker(documents, query, model):
-    sentence_combinations = [[query, document[0].page_content] for document in documents]
+def sbert_ranker(documents: List[DocumentRecall], query: str, model: CrossEncoder) -> List[DocumentRecall]:
+    """
+    Ranks a list of documents based on relevance to a query using a cross-encoder model.
+
+    This function takes in a list of documents, a query string, and a pre-trained cross-encoder model to compute
+    relevance scores. Documents are then ranked in descending order of their scores, with the most relevant document
+    being at the top.
+
+    Args:
+        documents (List[DocumentRecall]): List of documents to be ranked.
+        query (str): The query string, used to evaluate the relevance of the documents.
+        model (CrossEncoder): A pre-trained cross-encoder model, used to compute the relevance scores for document-query
+            pairs.
+
+    Returns:
+        List[DocumentRecall]: A list of documents sorted in descending order of their relevance
+            scores to the given query.
+    """
+    sentence_combinations = [[query, document.document.page_content] for document in documents]
     scores = model.predict(sentence_combinations)
 
     ranked_indices = np.argsort(scores)[::-1]
