@@ -7,11 +7,11 @@ _MODELS_CACHE = {}
 
 
 @hook(priority=1)
-def after_cat_recalls_memories(config: RecallSettings, cat: StrayCat) -> None:
+async def after_cat_recalls_memories(config: RecallSettings, cat: StrayCat) -> None:
     if not cat.working_memory.context_memories:
         return
 
-    settings = cat.mad_hatter.get_plugin().load_settings()
+    settings = await cat.mad_hatter.get_plugin().load_settings()
 
     final_docs = None
     if settings["sbert"]:
