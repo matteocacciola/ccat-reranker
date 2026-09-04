@@ -1,0 +1,8 @@
+[project]
+name = "ccat-reranker"
+version = "0.2.8"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "sentence-transformers==4.1.0",
+    "unstructured==0.18.1",
+]
